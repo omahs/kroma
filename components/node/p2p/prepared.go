@@ -3,7 +3,6 @@ package p2p
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/discover"
@@ -43,14 +42,14 @@ func (p *Prepared) Check() error {
 }
 
 // Host creates a libp2p host service. Returns nil, nil if p2p is disabled.
-func (p *Prepared) Host(log log.Logger, reporter metrics.Reporter, metrics HostMetrics) (host.Host, error) {
+func (p *Prepared) Host(log log.Logger, reporter metrics.Reporter) (host.Host, error) {
 	return p.HostP2P, nil
 }
 
 // Discovery creates a disc-v5 service. Returns nil, nil, nil if discovery is disabled.
 func (p *Prepared) Discovery(log log.Logger, rollupCfg *rollup.Config, tcpPort uint16) (*enode.LocalNode, *discover.UDPv5, error) {
 	if p.LocalNode != nil {
-		dat := OpStackENRData{
+		dat := KromaStackENRData{
 			chainID: rollupCfg.L2ChainID.Uint64(),
 			version: 0,
 		}
@@ -62,13 +61,15 @@ func (p *Prepared) Discovery(log log.Logger, rollupCfg *rollup.Config, tcpPort u
 	return p.LocalNode, p.UDPv5, nil
 }
 
-func (p *Prepared) ConfigureGossip(rollupCfg *rollup.Config) []pubsub.Option {
-	return []pubsub.Option{
-		pubsub.WithGossipSubParams(BuildGlobalGossipParams(rollupCfg)),
-	}
+func (p *Prepared) ConfigureGossip(params *pubsub.GossipSubParams) []pubsub.Option {
+	return nil
 }
 
-func (p *Prepared) PeerScoringParams() *ScoringParams {
+func (p *Prepared) PeerScoringParams() *pubsub.PeerScoreParams {
+	return nil
+}
+
+func (p *Prepared) PeerBandScorer() *BandScoreThresholds {
 	return nil
 }
 
@@ -76,12 +77,8 @@ func (p *Prepared) BanPeers() bool {
 	return false
 }
 
-func (p *Prepared) BanThreshold() float64 {
-	return -100
-}
-
-func (p *Prepared) BanDuration() time.Duration {
-	return 1 * time.Hour
+func (p *Prepared) TopicScoringParams() *pubsub.TopicScoreParams {
+	return nil
 }
 
 func (p *Prepared) Disabled() bool {

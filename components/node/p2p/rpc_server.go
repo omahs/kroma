@@ -22,8 +22,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peerstore"
 
 	"github.com/kroma-network/kroma/components/node/metrics"
-	"github.com/kroma-network/kroma/components/node/p2p/gating"
-	"github.com/kroma-network/kroma/components/node/p2p/store"
 )
 
 // TODO: dynamic peering
@@ -48,7 +46,7 @@ type Node interface {
 	// GossipOut returns the gossip output/info control
 	GossipOut() GossipOut
 	// ConnectionGater returns the connection gater, to ban/unban peers with, may be nil
-	ConnectionGater() gating.BlockingConnectionGater
+	ConnectionGater() ConnectionGater
 	// ConnectionManager returns the connection manager, to protect peers with, may be nil
 	ConnectionManager() connmgr.ConnManager
 }
@@ -107,11 +105,6 @@ func dumpPeer(id peer.ID, nw network.Network, pstore peerstore.Peerstore, connMg
 				return nil, fmt.Errorf("unexpected pubkey type: %T", pub)
 			}
 			info.NodeID = enode.PubkeyToIDV4((*decredSecp.PublicKey)(typedPub).ToECDSA())
-		}
-	}
-	if eps, ok := pstore.(store.ExtendedPeerstore); ok {
-		if dat, err := eps.GetPeerScores(id); err == nil {
-			info.PeerScores = dat
 		}
 	}
 	if dat, err := pstore.Get(id, "ProtocolVersion"); err == nil {
