@@ -14,7 +14,6 @@ import (
 	"github.com/kroma-network/kroma/bindings/bindings"
 	"github.com/kroma-network/kroma/components/node/eth"
 	"github.com/kroma-network/kroma/components/node/rollup/derive"
-	"github.com/kroma-network/kroma/components/node/rollup/sync"
 	"github.com/kroma-network/kroma/components/node/testlog"
 	"github.com/kroma-network/kroma/e2e/e2eutils"
 )
@@ -30,7 +29,7 @@ func TestBatcherKeyRotation(gt *testing.T) {
 	miner, seqEngine, sequencer := setupSequencerTest(t, sd, log)
 	miner.ActL1SetFeeRecipient(common.Address{'A'})
 	sequencer.ActL2PipelineFull(t)
-	_, syncer := setupSyncer(t, sd, log, miner.L1Client(t, sd.RollupCfg), &sync.Config{})
+	_, syncer := setupSyncer(t, sd, log, miner.L1Client(t, sd.RollupCfg))
 	rollupSeqCl := sequencer.RollupClient()
 
 	// the default batcher
@@ -350,7 +349,7 @@ func TestGasLimitChange(gt *testing.T) {
 	miner.ActL1IncludeTx(dp.Addresses.Batcher)(t)
 	miner.ActL1EndBlock(t)
 
-	_, syncer := setupSyncer(t, sd, log, miner.L1Client(t, sd.RollupCfg), &sync.Config{})
+	_, syncer := setupSyncer(t, sd, log, miner.L1Client(t, sd.RollupCfg))
 	syncer.ActL2PipelineFull(t)
 
 	require.Equal(t, sequencer.L2Unsafe(), syncer.L2Safe(), "syncer stays in sync, even with gaslimit changes")
@@ -425,7 +424,7 @@ func TestValidatorRewardScalarChange(gt *testing.T) {
 	miner.ActL1IncludeTx(dp.Addresses.Batcher)(t)
 	miner.ActL1EndBlock(t)
 
-	_, syncer := setupSyncer(t, sd, log, miner.L1Client(t, sd.RollupCfg), &sync.Config{})
+	_, syncer := setupSyncer(t, sd, log, miner.L1Client(t, sd.RollupCfg))
 	syncer.ActL2PipelineFull(t)
 
 	require.Equal(t, sequencer.L2Unsafe(), syncer.L2Safe(), "syncer stays in sync, even with validator reward scalar changes")

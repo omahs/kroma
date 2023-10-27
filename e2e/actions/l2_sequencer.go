@@ -12,7 +12,6 @@ import (
 	"github.com/kroma-network/kroma/components/node/rollup"
 	"github.com/kroma-network/kroma/components/node/rollup/derive"
 	"github.com/kroma-network/kroma/components/node/rollup/driver"
-	"github.com/kroma-network/kroma/components/node/rollup/sync"
 	"github.com/kroma-network/kroma/components/node/sources"
 	"github.com/kroma-network/kroma/e2e/e2eutils"
 )
@@ -43,7 +42,7 @@ type L2Sequencer struct {
 }
 
 func NewL2Sequencer(t Testing, log log.Logger, l1 derive.L1Fetcher, eng L2API, cfg *rollup.Config, seqConfDepth uint64) *L2Sequencer {
-	syncer := NewL2Syncer(t, log, l1, eng, cfg, &sync.Config{})
+	syncer := NewL2Syncer(t, log, l1, eng, cfg)
 	attrBuilder := derive.NewFetchingAttributesBuilder(cfg, l1, eng)
 	seqConfDepthL1 := driver.NewConfDepth(seqConfDepth, syncer.l1State.L1Head, l1)
 	l1OriginSelector := &MockL1OriginSelector{

@@ -296,11 +296,6 @@ func (s *Driver) eventLoop() {
 				stepAttempts = 0
 				s.metrics.SetDerivationIdle(true)
 				continue
-			} else if err != nil && errors.Is(err, derive.ErrEngineP2PSyncing) {
-				s.log.Debug("Derivation process went idle because the engine is syncing", "progress", s.derivation.Origin(), "sync_target", s.derivation.EngineSyncTarget(), "err", err)
-				stepAttempts = 0
-				s.metrics.SetDerivationIdle(true)
-				continue
 			} else if err != nil && errors.Is(err, derive.ErrReset) {
 				// If the pipeline corrupts, e.g. due to a reorg, simply reset it
 				s.log.Warn("Derivation pipeline is reset", "err", err)
@@ -314,7 +309,7 @@ func (s *Driver) eventLoop() {
 			} else if err != nil && errors.Is(err, derive.ErrCritical) {
 				s.log.Error("Derivation process critical error", "err", err)
 				return
-			} else if err != nil && errors.Is(err, derive.ErrNotEnoughData) {
+			} else if err != nil && errors.Is(err, derive.NotEnoughData) {
 				stepAttempts = 0 // don't do a backoff for this error
 				reqStep()
 				continue
@@ -429,7 +424,6 @@ func (s *Driver) syncStatus() *eth.SyncStatus {
 		SafeL2:             s.derivation.SafeL2Head(),
 		FinalizedL2:        s.derivation.Finalized(),
 		UnsafeL2SyncTarget: s.derivation.UnsafeL2SyncTarget(),
-		EngineSyncTarget:   s.derivation.EngineSyncTarget(),
 	}
 }
 

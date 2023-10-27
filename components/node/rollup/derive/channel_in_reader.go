@@ -78,11 +78,11 @@ func (cr *ChannelInReader) NextBatch(ctx context.Context) (*BatchData, error) {
 	batch, err := cr.nextBatchFn()
 	if err == io.EOF {
 		cr.NextChannel()
-		return nil, ErrNotEnoughData
+		return nil, NotEnoughData
 	} else if err != nil {
 		cr.log.Warn("failed to read batch from channel reader, skipping to next channel now", "err", err)
 		cr.NextChannel()
-		return nil, ErrNotEnoughData
+		return nil, NotEnoughData
 	}
 	return batch.Batch, nil
 }

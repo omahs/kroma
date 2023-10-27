@@ -17,7 +17,6 @@ import (
 	"github.com/kroma-network/kroma/components/node/eth"
 	"github.com/kroma-network/kroma/components/node/metrics"
 	"github.com/kroma-network/kroma/components/node/rollup"
-	"github.com/kroma-network/kroma/components/node/rollup/sync"
 	"github.com/kroma-network/kroma/components/node/testlog"
 	"github.com/kroma-network/kroma/components/node/testutils"
 )
@@ -247,7 +246,7 @@ func TestEngineQueue_Finalize(t *testing.T) {
 
 	prev := &fakeAttributesQueue{}
 
-	eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F, &sync.Config{})
+	eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F)
 	require.ErrorIs(t, eq.Reset(context.Background(), eth.L1BlockRef{}, eth.SystemConfig{}), io.EOF)
 
 	require.Equal(t, refB1, eq.SafeL2Head(), "L2 reset should go back to sequence window ago: blocks with origin E and D are not safe until we reconcile, C is extra, and B1 is the end we look for")
@@ -482,7 +481,7 @@ func TestEngineQueue_ResetWhenUnsafeOriginNotCanonical(t *testing.T) {
 
 	prev := &fakeAttributesQueue{origin: refE}
 
-	eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F, &sync.Config{})
+	eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F)
 	require.ErrorIs(t, eq.Reset(context.Background(), eth.L1BlockRef{}, eth.SystemConfig{}), io.EOF)
 
 	require.Equal(t, refB1, eq.SafeL2Head(), "L2 reset should go back to sequencer window ago: blocks with origin E and D are not safe until we reconcile, C is extra, and B1 is the end we look for")
@@ -813,7 +812,7 @@ func TestVerifyNewL1Origin(t *testing.T) {
 			}, nil)
 
 			prev := &fakeAttributesQueue{origin: refE}
-			eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F, &sync.Config{})
+			eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F)
 			require.ErrorIs(t, eq.Reset(context.Background(), eth.L1BlockRef{}, eth.SystemConfig{}), io.EOF)
 
 			require.Equal(t, refB1, eq.SafeL2Head(), "L2 reset should go back to sequencer window ago: blocks with origin E and D are not safe until we reconcile, C is extra, and B1 is the end we look for")
@@ -911,7 +910,7 @@ func TestBlockBuildingRace(t *testing.T) {
 	}
 
 	prev := &fakeAttributesQueue{origin: refA, attrs: attrs}
-	eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F, &sync.Config{})
+	eq := NewEngineQueue(logger, cfg, eng, metrics, prev, l1F)
 	require.ErrorIs(t, eq.Reset(context.Background(), eth.L1BlockRef{}, eth.SystemConfig{}), io.EOF)
 
 	id := eth.PayloadID{0xff}
@@ -941,7 +940,7 @@ func TestBlockBuildingRace(t *testing.T) {
 	eng.ExpectGetPayload(id, nil, mockErr)
 	// The job will be not be cancelled, the untyped error is a temporary error
 
-	require.ErrorIs(t, eq.Step(context.Background()), ErrNotEnoughData, "queue up attributes")
+	require.ErrorIs(t, eq.Step(context.Background()), NotEnoughData, "queue up attributes")
 	require.ErrorIs(t, eq.Step(context.Background()), mockErr, "expecting to fail to process attributes")
 	require.NotNil(t, eq.safeAttributes, "still have attributes")
 
@@ -1086,15 +1085,14 @@ func TestResetLoop(t *testing.T) {
 
 	prev := &fakeAttributesQueue{origin: refA, attrs: attrs}
 
-	eq := NewEngineQueue(logger, cfg, eng, metrics.NoopMetrics, prev, l1F, &sync.Config{})
+	eq := NewEngineQueue(logger, cfg, eng, metrics.NoopMetrics, prev, l1F)
 	eq.unsafeHead = refA2
-	eq.engineSyncTarget = refA2
 	eq.safeHead = refA1
 	eq.finalized = refA0
 
 	// Queue up the safe attributes
 	require.Nil(t, eq.safeAttributes)
-	require.ErrorIs(t, eq.Step(context.Background()), ErrNotEnoughData)
+	require.ErrorIs(t, eq.Step(context.Background()), NotEnoughData)
 	require.NotNil(t, eq.safeAttributes)
 
 	// Perform the reset
@@ -1110,7 +1108,7 @@ func TestResetLoop(t *testing.T) {
 	require.NoError(t, eq.Step(context.Background()), "clean forkchoice state after reset")
 
 	// Crux of the test. Should be in a valid state after the reset.
-	require.ErrorIs(t, eq.Step(context.Background()), ErrNotEnoughData, "Should be able to step after a reset")
+	require.ErrorIs(t, eq.Step(context.Background()), NotEnoughData, "Should be able to step after a reset")
 
 	l1F.AssertExpectations(t)
 	eng.AssertExpectations(t)
@@ -1184,9 +1182,8 @@ func TestEngineQueue_StepPopOlderUnsafe(t *testing.T) {
 
 	prev := &fakeAttributesQueue{origin: refA}
 
-	eq := NewEngineQueue(logger, cfg, eng, metrics.NoopMetrics, prev, l1F, &sync.Config{})
+	eq := NewEngineQueue(logger, cfg, eng, metrics.NoopMetrics, prev, l1F)
 	eq.unsafeHead = refA2
-	eq.engineSyncTarget = refA2
 	eq.safeHead = refA0
 	eq.finalized = refA0
 

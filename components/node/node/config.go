@@ -9,7 +9,6 @@ import (
 	"github.com/kroma-network/kroma/components/node/p2p"
 	"github.com/kroma-network/kroma/components/node/rollup"
 	"github.com/kroma-network/kroma/components/node/rollup/driver"
-	"github.com/kroma-network/kroma/components/node/rollup/sync"
 	kpprof "github.com/kroma-network/kroma/utils/service/pprof"
 )
 
@@ -40,8 +39,6 @@ type Config struct {
 	// Optional
 	Tracer    Tracer
 	Heartbeat HeartbeatConfig
-
-	Sync sync.Config
 }
 
 type RPCConfig struct {
