@@ -10,10 +10,11 @@ import (
 	"github.com/kroma-network/kroma/components/node/eth"
 )
 
-// ChannelInReader reads a batch from the channel
+// Channel In Reader reads a batch from the channel
 // This does decompression and limits the max RLP size
 // This is a pure function from the channel, but each channel (or channel fragment)
 // must be tagged with an L1 inclusion block to be passed to the batch queue.
+
 type ChannelInReader struct {
 	log log.Logger
 
