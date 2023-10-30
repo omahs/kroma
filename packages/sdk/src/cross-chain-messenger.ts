@@ -302,15 +302,6 @@ export class CrossChainMessenger {
       throw new Error(`can only convert L2 to L1 messages to low level`)
     }
 
-    const encoded = encodeCrossDomainMessageV0(
-      resolved.messageNonce,
-      resolved.sender,
-      resolved.target,
-      resolved.value,
-      resolved.minGasLimit,
-      resolved.message
-    )
-
     // We need to figure out the final withdrawal data that was used to compute the withdrawal hash
     // inside the L2ToL1Message passer contract.
     const receipt = await this.l2Provider.getTransactionReceipt(
@@ -348,7 +339,14 @@ export class CrossChainMessenger {
       target: this.contracts.l1.L1CrossDomainMessenger.address,
       value: resolved.value,
       minGasLimit: gasLimit,
-      message: encoded,
+      message: encodeCrossDomainMessageV0(
+        resolved.messageNonce,
+        resolved.sender,
+        resolved.target,
+        resolved.value,
+        resolved.minGasLimit,
+        resolved.message
+      ),
     }
   }
 
@@ -433,9 +431,6 @@ export class CrossChainMessenger {
   public async toCrossChainMessage(
     message: MessageLike
   ): Promise<CrossChainMessage> {
-    if (!message) {
-      throw new Error('message is undefined')
-    }
     // TODO: Convert these checks into proper type checks.
     if ((message as CrossChainMessage).message) {
       return message as CrossChainMessage
@@ -1043,8 +1038,9 @@ export class CrossChainMessenger {
       overrides?: Overrides
     }
   ): Promise<TransactionResponse> {
-    const tx = await this.populateTransaction.proveMessage(message, opts)
-    return (opts?.signer || this.l1Signer).sendTransaction(tx)
+    return (opts?.signer || this.l1Signer).sendTransaction(
+      await this.populateTransaction.proveMessage(message, opts)
+    )
   }
 
   /**
@@ -1324,8 +1320,7 @@ export class CrossChainMessenger {
 
       const withdrawal = await this.toLowLevelMessage(resolved)
       const proof = await this.getMessageProof(resolved)
-
-      const args = [
+      return this.contracts.l1.KromaPortal.populateTransaction.proveWithdrawalTransaction(
         [
           withdrawal.messageNonce,
           withdrawal.sender,
@@ -1343,11 +1338,7 @@ export class CrossChainMessenger {
           proof.outputRootProof.nextBlockHash,
         ],
         proof.withdrawalProof,
-        opts?.overrides || {},
-      ] as const
-
-      return this.contracts.l1.KromaPortal.populateTransaction.proveWithdrawalTransaction(
-        ...args
+        opts?.overrides || {}
       )
     },
 
