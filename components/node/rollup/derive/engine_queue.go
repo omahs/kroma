@@ -358,12 +358,7 @@ func (eq *EngineQueue) tryNextUnsafePayload(ctx context.Context) error {
 	first := eq.unsafePayloads.Peek()
 
 	if uint64(first.BlockNumber) <= eq.safeHead.Number {
-		eq.log.Info("skipping unsafe payload, since it is older than safe head", "safe_head", eq.safeHead.ID(), "unsafe_payload", first.ID())
-		eq.unsafePayloads.Pop()
-		return nil
-	}
-	if uint64(first.BlockNumber) <= eq.unsafeHead.Number {
-		eq.log.Info("skipping unsafe payload, since it is older than unsafe head", "unsafe_head", eq.unsafeHead.ID(), "unsafe_payload", first.ID())
+		eq.log.Info("skipping unsafe payload, since it is older than safe head", "safe", eq.safeHead.ID(), "unsafe", first.ID(), "payload", first.ID())
 		eq.unsafePayloads.Pop()
 		return nil
 	}
@@ -625,7 +620,7 @@ func (eq *EngineQueue) resetBuildingState() {
 	eq.buildingSafe = false
 }
 
-// Reset walks the L2 chain backwards until it finds an L2 block whose L1 origin is canonical.
+// ResetStep Walks the L2 chain backwards until it finds an L2 block whose L1 origin is canonical.
 // The unsafe head is set to the head of the L2 chain, unless the existing safe head is not canonical.
 func (eq *EngineQueue) Reset(ctx context.Context, _ eth.L1BlockRef, _ eth.SystemConfig) error {
 	result, err := sync.FindL2Heads(ctx, eq.cfg, eq.l1Fetcher, eq.engine, eq.log)
