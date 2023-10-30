@@ -176,17 +176,7 @@ func (b *Batcher) loop() {
 	for {
 		select {
 		case <-ticker.C:
-			if err := b.batchSubmitter.loadBlocksIntoState(b.shutdownCtx); errors.Is(err, ErrReorg) {
-				err := b.batchSubmitter.state.Close()
-				if err != nil {
-					b.l.Error("failed to close the channel manager to handle a L2 reorg", "err", err)
-				}
-				if err := b.submitBatch(b.killCtx); err != nil {
-					b.l.Error("failed to submit batch channel frame to handle a L2 reorg", "err", err)
-				}
-				b.batchSubmitter.state.Clear()
-				continue
-			}
+			b.batchSubmitter.LoadBlocksIntoState(b.shutdownCtx)
 			if err := b.submitBatch(b.killCtx); err != nil {
 				b.l.Error("failed to submit batch channel frame", "err", err)
 			}
