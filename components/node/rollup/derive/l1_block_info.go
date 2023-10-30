@@ -2,7 +2,7 @@ package derive
 
 import (
 	"bytes"
-	"errors"
+	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -12,7 +12,6 @@ import (
 
 	"github.com/kroma-network/kroma/bindings/predeploys"
 	"github.com/kroma-network/kroma/components/node/eth"
-	"github.com/kroma-network/kroma/utils/service/solabi"
 )
 
 const (
@@ -44,97 +43,72 @@ type L1BlockInfo struct {
 	ValidatorRewardScalar eth.Bytes32
 }
 
-// Binary Format
-// +---------+--------------------------+
-// | Bytes   | Field                    |
-// +---------+--------------------------+
-// | 4       | Function signature       |
-// | 32      | Number                   |
-// | 32      | Time                     |
-// | 32      | BaseFee                  |
-// | 32      | BlockHash                |
-// | 32      | SequenceNumber           |
-// | 32      | BatcherAddr              |
-// | 32      | L1FeeOverhead            |
-// | 32      | L1FeeScalar              |
-// | 32      | ValidatorRewardScalar    |
-// +---------+--------------------------+
-
 func (info *L1BlockInfo) MarshalBinary() ([]byte, error) {
-	w := bytes.NewBuffer(make([]byte, 0, L1InfoLen))
-	if err := solabi.WriteSignature(w, L1InfoFuncBytes4); err != nil {
-		return nil, err
+	data := make([]byte, L1InfoLen)
+	offset := 0
+	copy(data[offset:4], L1InfoFuncBytes4)
+	offset += 4
+	binary.BigEndian.PutUint64(data[offset+24:offset+32], info.Number)
+	offset += 32
+	binary.BigEndian.PutUint64(data[offset+24:offset+32], info.Time)
+	offset += 32
+	// Ensure that the baseFee is not too large.
+	if info.BaseFee.BitLen() > 256 {
+		return nil, fmt.Errorf("base fee exceeds 256 bits: %d", info.BaseFee)
 	}
-	if err := solabi.WriteUint64(w, info.Number); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteUint64(w, info.Time); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteUint256(w, info.BaseFee); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteHash(w, info.BlockHash); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteUint64(w, info.SequenceNumber); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteAddress(w, info.BatcherAddr); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteEthBytes32(w, info.L1FeeOverhead); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteEthBytes32(w, info.L1FeeScalar); err != nil {
-		return nil, err
-	}
-	if err := solabi.WriteEthBytes32(w, info.ValidatorRewardScalar); err != nil {
-		return nil, err
-	}
-	return w.Bytes(), nil
+	info.BaseFee.FillBytes(data[offset : offset+32])
+	offset += 32
+	copy(data[offset:offset+32], info.BlockHash.Bytes())
+	offset += 32
+	binary.BigEndian.PutUint64(data[offset+24:offset+32], info.SequenceNumber)
+	offset += 32
+	copy(data[offset+12:offset+32], info.BatcherAddr[:])
+	offset += 32
+	copy(data[offset:offset+32], info.L1FeeOverhead[:])
+	offset += 32
+	copy(data[offset:offset+32], info.L1FeeScalar[:])
+	offset += 32
+	copy(data[offset:offset+32], info.ValidatorRewardScalar[:])
+	return data, nil
 }
 
 func (info *L1BlockInfo) UnmarshalBinary(data []byte) error {
 	if len(data) != L1InfoLen {
 		return fmt.Errorf("data is unexpected length: %d", len(data))
 	}
-	reader := bytes.NewReader(data)
+	var padding [24]byte
+	offset := 4
 
-	var err error
-	if _, err := solabi.ReadAndValidateSignature(reader, L1InfoFuncBytes4); err != nil {
-		return err
+	if !bytes.Equal(data[0:offset], L1InfoFuncBytes4) {
+		return fmt.Errorf("data does not match L1 info function signature: 0x%x", data[offset:4])
 	}
-	if info.Number, err = solabi.ReadUint64(reader); err != nil {
-		return err
+
+	info.Number = binary.BigEndian.Uint64(data[offset+24 : offset+32])
+	if !bytes.Equal(data[offset:offset+24], padding[:]) {
+		return fmt.Errorf("l1 info number exceeds uint64 bounds: %x", data[offset:offset+32])
 	}
-	if info.Time, err = solabi.ReadUint64(reader); err != nil {
-		return err
+	offset += 32
+	info.Time = binary.BigEndian.Uint64(data[offset+24 : offset+32])
+	if !bytes.Equal(data[offset:offset+24], padding[:]) {
+		return fmt.Errorf("l1 info time exceeds uint64 bounds: %x", data[offset:offset+32])
 	}
-	if info.BaseFee, err = solabi.ReadUint256(reader); err != nil {
-		return err
+	offset += 32
+	info.BaseFee = new(big.Int).SetBytes(data[offset : offset+32])
+	offset += 32
+	info.BlockHash.SetBytes(data[offset : offset+32])
+	offset += 32
+	info.SequenceNumber = binary.BigEndian.Uint64(data[offset+24 : offset+32])
+	if !bytes.Equal(data[offset:offset+24], padding[:]) {
+		return fmt.Errorf("l1 info sequence number exceeds uint64 bounds: %x", data[offset:offset+32])
 	}
-	if info.BlockHash, err = solabi.ReadHash(reader); err != nil {
-		return err
-	}
-	if info.SequenceNumber, err = solabi.ReadUint64(reader); err != nil {
-		return err
-	}
-	if info.BatcherAddr, err = solabi.ReadAddress(reader); err != nil {
-		return err
-	}
-	if info.L1FeeOverhead, err = solabi.ReadEthBytes32(reader); err != nil {
-		return err
-	}
-	if info.L1FeeScalar, err = solabi.ReadEthBytes32(reader); err != nil {
-		return err
-	}
-	if info.ValidatorRewardScalar, err = solabi.ReadEthBytes32(reader); err != nil {
-		return err
-	}
-	if !solabi.EmptyReader(reader) {
-		return errors.New("too many bytes")
-	}
+	offset += 32
+	info.BatcherAddr.SetBytes(data[offset+12 : offset+32])
+	offset += 32
+	copy(info.L1FeeOverhead[:], data[offset:offset+32])
+	offset += 32
+	copy(info.L1FeeScalar[:], data[offset:offset+32])
+	offset += 32
+	copy(info.ValidatorRewardScalar[:], data[offset:offset+32])
 	return nil
 }
 
