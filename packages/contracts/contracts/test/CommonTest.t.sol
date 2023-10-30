@@ -190,7 +190,7 @@ contract L2OutputOracle_Initializer is UpgradeGovernor_Initializer {
     // Constructor arguments
     uint256 internal submissionInterval = 1800;
     uint256 internal l2BlockTime = 2;
-    uint256 internal startingBlockNumber = 10;
+    uint256 internal startingBlockNumber = 1;
     uint256 internal startingTimestamp = 1000;
     address internal guardian = 0x000000000000000000000000000000000000AaaD;
 
