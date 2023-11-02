@@ -7,10 +7,10 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli"
 
+	klog "github.com/ethereum-optimism/optimism/op-service/log"
 	"github.com/kroma-network/kroma/components/validator"
 	"github.com/kroma-network/kroma/components/validator/cmd/balance"
 	"github.com/kroma-network/kroma/components/validator/flags"
-	klog "github.com/kroma-network/kroma/utils/service/log"
 )
 
 var (

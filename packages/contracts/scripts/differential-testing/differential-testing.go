@@ -15,9 +15,9 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 	zkt "github.com/kroma-network/zktrie/types"
 
-	"github.com/kroma-network/kroma/bindings/predeploys"
-	"github.com/kroma-network/kroma/components/node/rollup"
-	"github.com/kroma-network/kroma/utils/chain-ops/crossdomain"
+	"github.com/ethereum-optimism/optimism/op-bindings/predeploys"
+	"github.com/ethereum-optimism/optimism/op-chain-ops/crossdomain"
+	"github.com/ethereum-optimism/optimism/op-node/rollup"
 )
 
 func init() {
