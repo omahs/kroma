@@ -13,8 +13,9 @@ type UserDepositSource struct {
 }
 
 const (
-	UserDepositSourceDomain   = 0
-	L1InfoDepositSourceDomain = 1
+	UserDepositSourceDomain      = 0
+	L1InfoDepositSourceDomain    = 1
+	MintTokenDepositSourceDomain = 10
 )
 
 func (dep *UserDepositSource) SourceHash() common.Hash {
@@ -41,6 +42,21 @@ func (dep *L1InfoDepositSource) SourceHash() common.Hash {
 
 	var domainInput [32 * 2]byte
 	binary.BigEndian.PutUint64(domainInput[32-8:32], L1InfoDepositSourceDomain)
+	copy(domainInput[32:], depositIDHash[:])
+	return crypto.Keccak256Hash(domainInput[:])
+}
+
+type MintTokenDepositSource struct {
+}
+
+func (dep *MintTokenDepositSource) SourceHash() common.Hash {
+	var input [32 * 2]byte
+	// binary.BigEndian.PutUint64(input[32-8:], dep.ParentGasUsed)
+	// binary.BigEndian.PutUint64(input[32*2-8:], dep.ParentGasTarget)
+	depositIDHash := crypto.Keccak256Hash(input[:])
+
+	var domainInput [32 * 2]byte
+	binary.BigEndian.PutUint64(domainInput[32-8:32], MintTokenDepositSourceDomain)
 	copy(domainInput[32:], depositIDHash[:])
 	return crypto.Keccak256Hash(domainInput[:])
 }
