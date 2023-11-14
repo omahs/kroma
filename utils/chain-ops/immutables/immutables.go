@@ -127,6 +127,17 @@ func BuildKroma(immutable ImmutableConfig, zktrie bool) (DeploymentResults, erro
 				immutable["KromaMintableERC721Factory"]["remoteChainId"],
 			},
 		},
+		{
+			Name: "KromaToken",
+		},
+		{
+			Name: "KromaTokenMinter",
+			Args: []interface{}{
+				predeploys.KromaToken,
+				immutable["KromaTokenMinter"]["recipients"],
+				immutable["KromaTokenMinter"]["shares"],
+			},
+		},
 	}
 	return BuildL2(deployments, zktrie)
 }
@@ -215,6 +226,22 @@ func l2Deployer(backend *backends.SimulatedBackend, opts *bind.TransactOpts, dep
 			return nil, fmt.Errorf("invalid type for remoteChainId")
 		}
 		_, tx, _, err = bindings.DeployKromaMintableERC721Factory(opts, backend, bridge, remoteChainId)
+	case "KroamToken":
+		_, tx, _, err = bindings.DeployKromaToken(opts, backend)
+	case "KromaTokenMinter":
+		kromaTokenAddress, ok := deployment.Args[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid type for kromaTokenAddress")
+		}
+		recipients, ok := deployment.Args[1].([]common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid type for recipients")
+		}
+		shares, ok := deployment.Args[2].([]uint64)
+		if !ok {
+			return nil, fmt.Errorf("invalid type for shares")
+		}
+		_, tx, _, err = bindings.DeployKromaTokenMinter(opts, backend, kromaTokenAddress, recipients, shares)
 	default:
 		return tx, fmt.Errorf("unknown contract: %s", deployment.Name)
 	}

@@ -73,6 +73,8 @@ type DeployConfig struct {
 	L2GenesisBlockParentHash    common.Hash    `json:"l2GenesisBlockParentHash"`
 	L2GenesisBlockBaseFeePerGas *hexutil.Big   `json:"l2GenesisBlockBaseFeePerGas"`
 
+	L2GenesisTgeTimeOffset *hexutil.Uint64 `json:"l2GenesisTgeTimeOffset,omitempty"`
+
 	ColosseumCreationPeriodSeconds uint64      `json:"colosseumCreationPeriodSeconds"`
 	ColosseumBisectionTimeout      uint64      `json:"colosseumBisectionTimeout"`
 	ColosseumProvingTimeout        uint64      `json:"colosseumProvingTimeout"`
@@ -130,6 +132,9 @@ type DeployConfig struct {
 
 	EIP1559Elasticity  uint64 `json:"eip1559Elasticity"`
 	EIP1559Denominator uint64 `json:"eip1559Denominator"`
+
+	KromaTokenMinterRecipients []common.Address `json:"kromaTokenMinterRecipients"`
+	KromaTokenMinterShares     []uint64         `json:"kromaTokenMinterShares"`
 
 	FundDevAccounts bool `json:"fundDevAccounts"`
 }
@@ -276,6 +281,18 @@ func (d *DeployConfig) Check() error {
 	if d.ZKVerifierM56Py == nil {
 		return fmt.Errorf("%w: ZKVerifierM56Py cannot be nil", ErrInvalidDeployConfig)
 	}
+
+	if d.L2GenesisTgeTimeOffset != nil {
+		if len(d.KromaTokenMinterRecipients) == 0 {
+			return fmt.Errorf("%w: KromaTokenMinterRecipients cannot be empty", ErrInvalidDeployConfig)
+		}
+		if len(d.KromaTokenMinterShares) == 0 {
+			return fmt.Errorf("%w: KromaTokenMinterShares cannot be empty", ErrInvalidDeployConfig)
+		}
+		if len(d.KromaTokenMinterRecipients) != len(d.KromaTokenMinterShares) {
+			return fmt.Errorf("%w: The lengths of KromaTokenMinterRecipients and KromaTokenMinterShares cannot be different", ErrInvalidDeployConfig)
+		}
+	}
 	return nil
 }
 
@@ -345,6 +362,17 @@ func (d *DeployConfig) InitDeveloperDeployedAddresses() error {
 	return nil
 }
 
+func (d *DeployConfig) TgeTime(genesisTime uint64) *uint64 {
+	if d.L2GenesisTgeTimeOffset == nil {
+		return nil
+	}
+	v := uint64(0)
+	if offset := *d.L2GenesisTgeTimeOffset; offset > 0 {
+		v = genesisTime + uint64(offset)
+	}
+	return &v
+}
+
 // RollupConfig converts a DeployConfig to a rollup.Config
 func (d *DeployConfig) RollupConfig(l1StartBlock *types.Block, l2GenesisBlockHash common.Hash, l2GenesisBlockNumber uint64) (*rollup.Config, error) {
 	if d.KromaPortalProxy == (common.Address{}) {
@@ -382,6 +410,7 @@ func (d *DeployConfig) RollupConfig(l1StartBlock *types.Block, l2GenesisBlockHas
 		BatchInboxAddress:      d.BatchInboxAddress,
 		DepositContractAddress: d.KromaPortalProxy,
 		L1SystemConfigAddress:  d.SystemConfigProxy,
+		TgeTime:                d.TgeTime(l1StartBlock.Time()),
 	}, nil
 }
 
@@ -453,6 +482,10 @@ func NewL2ImmutableConfig(config *DeployConfig, block *types.Block) (immutables.
 	}
 	immutable["ProtocolVault"] = immutables.ImmutableValues{
 		"recipient": config.ProtocolVaultRecipient,
+	}
+	immutable["KromaTokenMinter"] = immutables.ImmutableValues{
+		"recipients": config.KromaTokenMinterRecipients,
+		"shares":     config.KromaTokenMinterShares,
 	}
 
 	return immutable, nil

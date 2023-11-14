@@ -42,7 +42,7 @@ func NewFetchingAttributesBuilder(cfg *rollup.Config, l1 L1ReceiptsFetcher, l2 S
 // by setting NoTxPool=false as sequencer, or by appending batch transactions as syncer.
 // The severity of the error is returned; a crit=false error means there was a temporary issue, like a failed RPC or time-out.
 // A crit=true error means the input arguments are inconsistent or invalid.
-func (ba *FetchingAttributesBuilder) PreparePayloadActtributes(ctx context.Context, l2Parent eth.L2BlockRef, epoch eth.BlockID) (attrs *eth.PayloadAttributes, err error) {
+func (ba *FetchingAttributesBuilder) PreparePayloadAttributes(ctx context.Context, l2Parent eth.L2BlockRef, epoch eth.BlockID) (attrs *eth.PayloadAttributes, err error) {
 	var l1Info eth.BlockInfo
 	var depositTxs []hexutil.Bytes
 	var seqNumber uint64

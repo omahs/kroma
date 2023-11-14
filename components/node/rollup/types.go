@@ -78,6 +78,8 @@ type Config struct {
 	DepositContractAddress common.Address `json:"deposit_contract_address"`
 	// L1 System Config Address
 	L1SystemConfigAddress common.Address `json:"l1_system_config_address"`
+
+	TgeTime *uint64 `json:"tge_time,omitempty"`
 }
 
 // ValidateL1Config checks L1 config variables for errors.
@@ -243,6 +245,10 @@ func (cfg *Config) Check() error {
 
 func (cfg *Config) L1Signer() types.Signer {
 	return types.NewLondonSigner(cfg.L1ChainID)
+}
+
+func (cfg *Config) isTge(timestamp uint64) bool {
+	return cfg.TgeTime != nil && timestamp >= *cfg.TgeTime
 }
 
 func (cfg *Config) ComputeTimestamp(blockNum uint64) uint64 {

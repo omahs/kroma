@@ -8,7 +8,7 @@ contract KromaTokenMinter {
      * @notice Address of the special depositor account.
      */
     address public constant DEPOSITOR_ACCOUNT = 0xDeAddEAddeADdeADdEaDdEaddeadDeADdEAD0002;
-
+    uint256 public constant SHARE_DENOMINATOR = 100;
     uint256 public constant MINT_DENOMINATOR = 100;
     uint256 public constant MINT_MAX_INCREASE = 3;
     uint256 public constant MINT_MIN_DECREASE = 7;
@@ -16,64 +16,44 @@ contract KromaTokenMinter {
     uint256 public constant MINT_DECREASE_CAP = 10;
 
     KromaToken public immutable kromaToken;
-    address public immutable investorVault;
-    address public immutable teamVault;
-    address public immutable wemixFoundationVault;
-    address public immutable wemixCommunityVault;
-    address public immutable airdropVault;
-    address public immutable partnerVault;
-    address public immutable utilityVault;
-    address public immutable securityCouncilVault;
-    address public immutable communityImpactVault;
-    address public immutable validatorVault;
 
+    address[] public recipients;
+    mapping(address => uint256) public shareOf;
     uint256 internal prevMinted;
-
-    error ErrNoDepositor();
-
-    modifier onlyDepositor() {
-        if (msg.sender != DEPOSITOR_ACCOUNT) {
-            revert ErrNoDepositor();
-        }
-        _;
-    }
 
     constructor(
         KromaToken _kromaToken,
-        address _investorVault,
-        address _teamVault,
-        address _wemixFoundationVault,
-        address _wemixCommunity,
-        address _airdropVault,
-        address _partnerVault,
-        address _utilityVault,
-        address _securityCouncilVault,
-        address _communityImpactVault,
-        address _validatorReward
+        address[] memory _recipients,
+        uint64[] memory _shares
     ) {
+        require(_recipients.length == _shares.length, "invalid length of array");
+
         kromaToken = _kromaToken;
-        investorVault = _investorVault;
-        teamVault = _teamVault;
-        wemixFoundationVault = _wemixFoundationVault;
-        wemixCommunityVault = _wemixCommunity;
-        airdropVault = _airdropVault;
-        partnerVault = _partnerVault;
-        utilityVault = _utilityVault;
-        securityCouncilVault = _securityCouncilVault;
-        communityImpactVault = _communityImpactVault;
-        validatorVault = _validatorReward;
+
+        uint256 totalShares = 0;
+        for (uint256 i=0; i<_recipients.length; i++) {
+            address recipient = _recipients[i];
+            require(recipient != address(0), "recipient address cannot be 0");
+            uint256 share = _shares[i];
+            require(share != 0, "share cannot be 0");
+            totalShares += share;
+
+            recipients.push(recipient);
+            shareOf[recipient] = share;
+        }
+        require(totalShares == SHARE_DENOMINATOR, "invalid shares");
     }
 
-    function mint() external onlyDepositor {
+    function mint(uint256 totalAmount) external {
+        require(msg.sender == DEPOSITOR_ACCOUNT, "only depositor can call this function");
+
         // TODO(pangssu): add distribution logic
-        kromaToken.mint(investorVault, 1 ether);
-        kromaToken.mint(teamVault, 1 ether);
-        kromaToken.mint(wemixFoundationVault, 1 ether);
-        kromaToken.mint(wemixCommunityVault, 1 ether);
-        kromaToken.mint(partnerVault, 1 ether);
-        kromaToken.mint(utilityVault, 1 ether);
-        kromaToken.mint(securityCouncilVault, 1 ether);
-        kromaToken.mint(communityImpactVault, 1 ether);
-        kromaToken.mint(validatorVault, 1 ether);
+        for (uint256 i=0; i<recipients.length; i++) {
+            address recipient = recipients[i];
+            uint256 share = shareOf[recipient];
+            uint256 amount = totalAmount * share / SHARE_DENOMINATOR;
+
+            kromaToken.mint(recipient, amount);
+        }
     }
 }

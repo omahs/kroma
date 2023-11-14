@@ -13,7 +13,8 @@ const (
 	L1FeeVault                 = "0x4200000000000000000000000000000000000007"
 	ValidatorRewardVault       = "0x4200000000000000000000000000000000000008"
 	L2StandardBridge           = "0x4200000000000000000000000000000000000009"
-	TokenMinter                = "0x4200000000000000000000000000000000000010"
+	KromaToken                 = "0x4200000000000000000000000000000000000010"
+	KromaTokenMinter           = "0x4200000000000000000000000000000000000011"
 	L2ERC721Bridge             = "0x420000000000000000000000000000000000000A"
 	KromaMintableERC20Factory  = "0x420000000000000000000000000000000000000B"
 	KromaMintableERC721Factory = "0x420000000000000000000000000000000000000C"
@@ -30,7 +31,8 @@ var (
 	L1FeeVaultAddr                 = common.HexToAddress(L1FeeVault)
 	ValidatorRewardVaultAddr       = common.HexToAddress(ValidatorRewardVault)
 	L2StandardBridgeAddr           = common.HexToAddress(L2StandardBridge)
-	TokenMinterAddr                = common.HexToAddress(TokenMinter)
+	KromaTokenAddr                 = common.HexToAddress(KromaToken)
+	KromaTokenMinterAddr           = common.HexToAddress(KromaTokenMinter)
 	L2ERC721BridgeAddr             = common.HexToAddress(L2ERC721Bridge)
 	KromaMintableERC20FactoryAddr  = common.HexToAddress(KromaMintableERC20Factory)
 	KromaMintableERC721FactoryAddr = common.HexToAddress(KromaMintableERC721Factory)
@@ -49,7 +51,8 @@ func init() {
 	Predeploys["L1FeeVault"] = &L1FeeVaultAddr
 	Predeploys["ValidatorRewardVault"] = &ValidatorRewardVaultAddr
 	Predeploys["L2StandardBridge"] = &L2StandardBridgeAddr
-	Predeploys["TokenMinter"] = &TokenMinterAddr
+	Predeploys["KromaToken"] = &KromaTokenAddr
+	Predeploys["KromaTokenMinter"] = &KromaTokenMinterAddr
 	Predeploys["L2ERC721Bridge"] = &L2ERC721BridgeAddr
 	Predeploys["KromaMintableERC20Factory"] = &KromaMintableERC20FactoryAddr
 	Predeploys["KromaMintableERC721Factory"] = &KromaMintableERC721FactoryAddr

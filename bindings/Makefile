@@ -12,6 +12,8 @@ bindings: basefee-vault-bindings \
 		kroma-mintable-erc20-factory-bindings \
 		kroma-mintable-erc721-factory-bindings \
 		kroma-portal-bindings \
+		kroma-token-bindings \
+		kroma-token-minter-bindings \
 		l1-cross-domain-messenger-bindings \
 		l1-erc721-bridge-bindings \
 		l1-fee-vault-bindings \
@@ -52,6 +54,8 @@ more:
 KromaMintableERC20Factory,\
 KromaMintableERC721Factory,\
 KromaPortal,\
+KromaToken,\
+KromaTokenMinter,\
 L1Block,\
 L1CrossDomainMessenger,\
 L2CrossDomainMessenger,\
@@ -102,6 +106,12 @@ kroma-mintable-erc721-factory-bindings: compile
 
 kroma-portal-bindings: compile
 	bash ./gen_bindings.sh contracts/L1/KromaPortal.sol:KromaPortal $(pkg)
+
+kroma-token-bindings: compile
+	bash ./gen_bindings.sh contracts/token/KromaToken.sol:KromaToken $(pkg)
+
+kroma-token-minter-bindings: compile
+	bash ./gen_bindings.sh contracts/token/KromaTokenMinter.sol:KromaTokenMinter $(pkg)
 
 l1block-bindings: compile
 	bash ./gen_bindings.sh contracts/L2/L1Block.sol:L1Block $(pkg)
