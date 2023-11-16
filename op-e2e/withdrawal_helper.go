@@ -3,6 +3,7 @@ package op_e2e
 import (
 	"context"
 	"crypto/ecdsa"
+	"github.com/kroma-network/kroma/op-e2e/e2eutils/wait"
 	"math/big"
 	"testing"
 	"time"
@@ -146,7 +147,8 @@ func FinalizeWithdrawal(t *testing.T, cfg SystemConfig, l1Client *ethclient.Clie
 	// Wait for finalization and then create the Finalized Withdrawal Transaction
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Duration(cfg.DeployConfig.L1BlockTime)*time.Second)
 	defer cancel()
-	_, err := withdrawals.WaitForFinalizationPeriod(ctx, l1Client, predeploys.DevKromaPortalAddr, withdrawalProofReceipt.BlockNumber)
+
+	err := wait.ForFinalizationPeriod(ctx, l1Client, withdrawalProofReceipt.BlockNumber, predeploys.DevL2OutputOracleAddr)
 	require.Nil(t, err)
 
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, cfg.L1ChainIDBig())

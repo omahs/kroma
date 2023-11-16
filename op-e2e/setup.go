@@ -77,6 +77,7 @@ func newTxMgrConfig(l1Addr string, privKey *ecdsa.PrivateKey) txmgr.CLIConfig {
 		NetworkTimeout:            2 * time.Second,
 		TxSendTimeout:             10 * time.Minute,
 		TxNotInMempoolTimeout:     2 * time.Minute,
+		TxBufferSize:              10,
 	}
 }
 
@@ -101,7 +102,7 @@ func DefaultSystemConfig(t *testing.T) SystemConfig {
 		ValidatorPoolTrustedValidator:   addresses.TrustedValidator,
 		ValidatorPoolRequiredBondAmount: uint642big(1),
 		ValidatorPoolMaxUnbond:          10,
-		ValidatorPoolRoundDuration:      4,
+		ValidatorPoolRoundDuration:      2,
 
 		L2OutputOracleSubmissionInterval: 4,
 		L2OutputOracleStartingTimestamp:  -1,
@@ -118,6 +119,11 @@ func DefaultSystemConfig(t *testing.T) SystemConfig {
 		L1GenesisBlockGasUsed:       0,
 		L1GenesisBlockParentHash:    common.Hash{},
 		L1GenesisBlockBaseFeePerGas: uint642big(7),
+		L1StartingBlockTag: &genesis.MarshalableRPCBlockNumberOrHash{
+			BlockNumber:      nil,
+			BlockHash:        &common.Hash{},
+			RequireCanonical: true,
+		},
 
 		L2GenesisBlockNonce:         0,
 		L2GenesisBlockGasLimit:      30_000_000,
@@ -166,24 +172,20 @@ func DefaultSystemConfig(t *testing.T) SystemConfig {
 		panic(err)
 	}
 
+	// Tests depend on premine being filled with secrets addresses
+	premine := make(map[common.Address]*big.Int)
+	for _, addr := range secrets.Addresses().All() {
+		premine[addr] = new(big.Int).Mul(big.NewInt(1000), big.NewInt(params.Ether))
+	}
+
 	return SystemConfig{
-		Secrets: secrets,
-
-		Premine: make(map[common.Address]*big.Int),
-
+		Secrets:                secrets,
+		Premine:                premine,
 		DeployConfig:           deployConfig,
 		L1InfoPredeployAddress: predeploys.L1BlockAddr,
 		JWTFilePath:            writeDefaultJWT(t),
 		JWTSecret:              testingJWTSecret,
 		Nodes: map[string]*rollupNode.Config{
-			"verifier": {
-				Driver: driver.Config{
-					VerifierConfDepth:  0,
-					SequencerConfDepth: 0,
-					SequencerEnabled:   false,
-				},
-				L1EpochPollInterval: time.Second * 4,
-			},
 			"sequencer": {
 				Driver: driver.Config{
 					VerifierConfDepth:  0,
@@ -196,7 +198,19 @@ func DefaultSystemConfig(t *testing.T) SystemConfig {
 					ListenPort:  0,
 					EnableAdmin: true,
 				},
-				L1EpochPollInterval: time.Second * 4,
+				L1EpochPollInterval:         time.Second * 2,
+				RuntimeConfigReloadInterval: time.Minute * 10,
+				ConfigPersistence:           &rollupNode.DisabledConfigPersistence{},
+			},
+			"verifier": {
+				Driver: driver.Config{
+					VerifierConfDepth:  0,
+					SequencerConfDepth: 0,
+					SequencerEnabled:   false,
+				},
+				L1EpochPollInterval:         time.Second * 4,
+				RuntimeConfigReloadInterval: time.Minute * 10,
+				ConfigPersistence:           &rollupNode.DisabledConfigPersistence{},
 			},
 		},
 		Loggers: map[string]log.Logger{
@@ -206,9 +220,10 @@ func DefaultSystemConfig(t *testing.T) SystemConfig {
 			"validator":  testlog.Logger(t, log.LvlInfo).New("role", "validator"),
 			"challenger": testlog.Logger(t, log.LvlInfo).New("role", "challenger"),
 		},
-		GethOptions:         map[string][]geth.GethOption{},
-		P2PTopology:         nil, // no P2P connectivity by default
-		NonFinalizedOutputs: false,
+		GethOptions:                map[string][]geth.GethOption{},
+		P2PTopology:                nil, // no P2P connectivity by default
+		NonFinalizedOutputs:        false,
+		BatcherTargetL1TxSizeBytes: 100_000,
 	}
 }
 

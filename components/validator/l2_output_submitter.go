@@ -395,7 +395,6 @@ func (l *L2OutputSubmitter) FetchOutput(ctx context.Context, blockNumber *big.In
 	cCtx, cCancel := context.WithTimeout(ctx, l.cfg.NetworkTimeout)
 	defer cCancel()
 	output, err := l.cfg.RollupClient.OutputAtBlock(cCtx, blockNumber.Uint64())
-	l.log.Debug("** fetch output", "block number", blockNumber.Uint64())
 	if err != nil {
 		l.log.Error("failed to fetch output at ", "block number", blockNumber.Uint64(), " err", err)
 		return nil, err

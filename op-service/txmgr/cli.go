@@ -43,6 +43,7 @@ type DefaultFlagValues struct {
 	TxSendTimeout             time.Duration
 	TxNotInMempoolTimeout     time.Duration
 	ReceiptQueryInterval      time.Duration
+	TxBufferSize              uint64
 }
 
 var (
@@ -54,6 +55,7 @@ var (
 		TxSendTimeout:             0 * time.Second,
 		TxNotInMempoolTimeout:     2 * time.Minute,
 		ReceiptQueryInterval:      12 * time.Second,
+		TxBufferSize:              uint64(10),
 	}
 )
 
@@ -161,6 +163,7 @@ func NewCLIConfig(l1RPCURL string, defaults DefaultFlagValues) CLIConfig {
 		NetworkTimeout:            defaults.NetworkTimeout,
 		TxSendTimeout:             defaults.TxSendTimeout,
 		TxNotInMempoolTimeout:     defaults.TxNotInMempoolTimeout,
+		TxBufferSize:              defaults.TxBufferSize,
 		ReceiptQueryInterval:      defaults.ReceiptQueryInterval,
 		SignerCLIConfig:           opsigner.NewCLIConfig(),
 	}
@@ -184,6 +187,9 @@ func (m CLIConfig) Check() error {
 	}
 	if m.TxNotInMempoolTimeout == 0 {
 		return errors.New("must provide TxNotInMempoolTimeout")
+	}
+	if m.TxBufferSize == 0 {
+		return errors.New("must provide TxBufferSize")
 	}
 	if m.SafeAbortNonceTooLowCount == 0 {
 		return errors.New("SafeAbortNonceTooLowCount must not be 0")
@@ -318,6 +324,9 @@ func (m Config) Check() error {
 	}
 	if m.TxNotInMempoolTimeout == 0 {
 		return errors.New("must provide TxNotInMempoolTimeout")
+	}
+	if m.TxBufferSize == 0 {
+		return errors.New("must provide TxBufferSize")
 	}
 	if m.SafeAbortNonceTooLowCount == 0 {
 		return errors.New("SafeAbortNonceTooLowCount must not be 0")
